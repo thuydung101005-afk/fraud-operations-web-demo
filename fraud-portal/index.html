@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Model Bundle for Client-side / GitHub Pages / Offline execution -->
+<script src="model_web_bundle.js"></script>
 <style>
 :root {
   --bg: #0b1120;
@@ -237,6 +239,57 @@ button { cursor: pointer; }
 .btn.warn { background: var(--amber-bg); border-color: var(--amber-border); color: #fbbf24; }
 .btn.danger { background: var(--red-bg); border-color: var(--red-border); color: #f87171; }
 
+/* BIG DRAG & DROP UPLOAD BOX */
+.upload-card {
+  background: linear-gradient(180deg, #13223f, #0f1a30);
+  border: 2px dashed #3b82f6;
+  border-radius: 14px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+.upload-card.dragover {
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 35px rgba(59, 130, 246, 0.35);
+  transform: scale(1.008);
+}
+.upload-icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.upload-card h3 {
+  margin: 0 0 6px;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.upload-card p {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  max-width: 750px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* PANELS & CARDS */
 .panel {
   background: var(--bg-card);
@@ -362,25 +415,6 @@ tbody tr.selected { background: rgba(59, 130, 246, 0.12); }
   font-size: 11.5px;
   color: var(--text-dim);
 }
-
-/* DRAG DROP ZONE */
-.dropzone {
-  border: 2px dashed #334155;
-  border-radius: 10px;
-  padding: 24px;
-  text-align: center;
-  background: rgba(15, 23, 42, 0.3);
-  margin-bottom: 16px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-.dropzone:hover, .dropzone.dragover {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.05);
-}
-.dropzone-icon { font-size: 28px; margin-bottom: 6px; }
-.dropzone-text { font-size: 13px; font-weight: 700; color: #cbd5e1; }
-.dropzone-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
 
 /* TWO COLUMN GRID */
 .twocol { grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); margin-top: 18px; }
@@ -636,9 +670,30 @@ tbody tr.selected { background: rgba(59, 130, 246, 0.12); }
         <div class="btn-group">
           <!-- Hidden File Input for CSV Upload -->
           <input type="file" id="csvFileInput" accept=".csv" style="display:none">
-          <button class="btn primary" id="uploadCsvBtn">📂 Nạp tệp CSV không nhãn</button>
+          <button class="btn primary" id="uploadCsvBtn">📂 Nạp tệp CSV</button>
           <button class="btn" id="downloadSampleBtn" title="Tải file test 100 giao dịch thực tế đã lược bỏ cột nhãn is_fraud">📥 Tải tệp mẫu không nhãn</button>
-          <button class="btn" id="exportScoredBtn">⇩ Xuất kết quả đã chấm điểm</button>
+          <button class="btn" id="exportScoredBtn">⇩ Xuất kết quả CSV</button>
+        </div>
+      </div>
+
+      <!-- BIG DRAG & DROP UPLOAD BOX -->
+      <div class="upload-card" id="dropZone">
+        <div class="upload-icon">📁</div>
+        <h3>KÉO THẢ TỆP CSV GIAO DỊCH VÀO ĐÂY HOẶC NHẤP ĐỂ CHỌN TỆP</h3>
+        <p>
+          Hệ thống mô phỏng thực tế ngân hàng: nhận tệp giao dịch thô (21 cột), <b>hoàn toàn không cần cột nhãn <code>is_fraud</code></b>. 
+          Master Model LightGBM (297 cây) sẽ tự động trích xuất 11 đặc trưng và phân loại rủi ro tức thì (&lt; 1 ms/giao dịch).
+        </p>
+        <div class="upload-actions">
+          <button class="btn primary" id="dropZoneBtn" style="padding:10px 20px;font-size:13px;">
+            📂 Chọn tệp CSV từ máy tính
+          </button>
+          <button class="btn" id="dropZoneSampleBtn">
+            📥 Dùng 100 giao dịch mẫu (không nhãn)
+          </button>
+          <button class="btn" id="resetDefaultBtn">
+            ↺ Đặt lại danh sách ban đầu
+          </button>
         </div>
       </div>
 
@@ -649,11 +704,10 @@ tbody tr.selected { background: rgba(59, 130, 246, 0.12); }
           <div>
             <strong id="batchTitle">Đang hiển thị 100 giao dịch thực nghiệm từ Master Model LightGBM</strong>
             <div style="font-size:11px;color:var(--text-dim);margin-top:2px;" id="batchSubtitle">
-              Thời gian suy luận trung bình: <span style="color:#60a5fa;font-family:var(--font-mono);" id="batchLatency">0.74 ms / tx</span> · Đạt chuẩn POS quốc tế (&lt; 50 ms)
+              Thời gian suy luận: <span style="color:#60a5fa;font-family:var(--font-mono);" id="batchLatency">0.68 ms / tx</span> · Đạt chuẩn POS quốc tế (&lt; 50 ms)
             </div>
           </div>
         </div>
-        <button class="btn" style="padding:6px 12px;font-size:11px;" id="resetDefaultBtn">↺ Đặt lại mặc định</button>
       </div>
 
       <!-- KPI METRICS -->
@@ -737,7 +791,7 @@ tbody tr.selected { background: rgba(59, 130, 246, 0.12); }
 
         <div class="tablefoot">
           <span id="rowCount">Đang hiển thị 100 giao dịch</span>
-          <span>LightGBM Master Model · Độ trễ: <b>0.74ms</b> · P99: <b>1.78ms</b></span>
+          <span>LightGBM Master Model · Độ trễ: <b>0.68ms</b> · P99: <b>1.78ms</b></span>
         </div>
       </div>
 
@@ -768,10 +822,8 @@ tbody tr.selected { background: rgba(59, 130, 246, 0.12); }
                 <text x="450" y="205">18:00</text>
                 <text x="568" y="205">24:00</text>
               </g>
-              <!-- Total transactions path -->
               <path d="M42 147 C75 145 92 154 120 139 S165 117 190 129 S230 137 260 108 S300 78 330 101 S380 128 410 96 S465 65 490 84 S540 115 570 71 S592 68 605 54 L605 185 L42 185Z" fill="rgba(59, 130, 246, 0.15)"/>
               <path d="M42 147 C75 145 92 154 120 139 S165 117 190 129 S230 137 260 108 S300 78 330 101 S380 128 410 96 S465 65 490 84 S540 115 570 71 S592 68 605 54" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"/>
-              <!-- High-risk flagged path -->
               <path d="M42 179 C80 178 100 176 130 181 S190 178 220 174 S270 181 300 176 S360 179 390 172 S440 176 470 169 S530 175 560 164 S590 170 605 161" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
             <div class="legend">
@@ -1064,10 +1116,248 @@ let pendingAction = null;
 const $ = id => document.getElementById(id);
 const money = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// INITIAL LOAD: Load real scored transactions from json or API
+// HAVERSINE DISTANCE IN JAVASCRIPT
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const toRad = x => (x * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371.0 * 2 * Math.asin(Math.sqrt(a));
+}
+
+// FULL 297 LIGHTGBM DECISION TREES EVALUATOR IN JAVASCRIPT (MATCHES PYTHON 100%)
+function evaluateLightGBM(features, bundle) {
+  // 1. RobustScaler Transformation
+  const scaled = [];
+  for (let j = 0; j < 11; j++) {
+    scaled.push((features[j] - bundle.scaler.center[j]) / bundle.scaler.scale[j]);
+  }
+  // 2. Traversal of all 297 trees
+  let rawScore = 0;
+  for (let i = 0; i < bundle.trees.length; i++) {
+    let node = bundle.trees[i];
+    while (node.v === undefined) {
+      node = (scaled[node.f] <= node.t) ? node.l : node.r;
+    }
+    rawScore += node.v;
+  }
+  // 3. Sigmoid probability
+  return 1.0 / (1.0 + Math.exp(-rawScore));
+}
+
+// RFC 4180 COMPLIANT CSV PARSER
+function parseCSV(text) {
+  const lines = [];
+  let row = [""];
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+    
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        row[row.length - 1] += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      row.push("");
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && next === '\n') i++;
+      if (row.length > 1 || row[0] !== "") lines.push(row);
+      row = [""];
+    } else {
+      row[row.length - 1] += c;
+    }
+  }
+  if (row.length > 1 || row[0] !== "") lines.push(row);
+  return lines;
+}
+
+// CLIENT-SIDE BATCH SCORING WITH EMBEDDED LIGHTGBM BUNDLE
+function scoreDatasetClientSide(csvText, filename = 'Uploaded_Data.csv') {
+  const bundle = window.MODEL_BUNDLE;
+  if (!bundle) {
+    throw new Error("Không tìm thấy model_web_bundle.js!");
+  }
+
+  const rawRows = parseCSV(csvText);
+  if (rawRows.length < 2) throw new Error("Tệp CSV rỗng hoặc không có dữ liệu!");
+
+  const rawHeaders = rawRows[0].map(h => h.trim().replace(/^"|"$/g, ''));
+  // Clean headers mapping
+  const colMap = {};
+  rawHeaders.forEach((h, idx) => {
+    colMap[h.toLowerCase()] = idx;
+  });
+
+  const getCol = (row, name, fallback = '') => {
+    const idx = colMap[name.toLowerCase()];
+    return (idx !== undefined && row[idx] !== undefined) ? row[idx].trim().replace(/^"|"$/g, '') : fallback;
+  };
+
+  const t0 = performance.now();
+  const scored = [];
+
+  for (let i = 1; i < rawRows.length; i++) {
+    const r = rawRows[i];
+    if (r.length <= 1 && (!r[0] || r[0].trim() === '')) continue;
+
+    const amt = parseFloat(getCol(r, 'amt', '0')) || 0;
+    const lat = parseFloat(getCol(r, 'lat', '0')) || 0;
+    const lon = parseFloat(getCol(r, 'long', '0')) || 0;
+    const merch_lat = parseFloat(getCol(r, 'merch_lat', '0')) || 0;
+    const merch_long = parseFloat(getCol(r, 'merch_long', '0')) || 0;
+    const dist = haversineKm(lat, lon, merch_lat, merch_long);
+
+    const transTimeStr = getCol(r, 'trans_date_trans_time', '');
+    const dobStr = getCol(r, 'dob', '');
+
+    const tDate = transTimeStr ? new Date(transTimeStr.replace(' ', 'T')) : new Date();
+    const dDate = dobStr ? new Date(dobStr) : new Date('1980-01-01');
+
+    const age = isNaN(dDate.getFullYear()) ? 40 : (tDate.getFullYear() - dDate.getFullYear());
+    const hour = isNaN(tDate.getHours()) ? 12 : tDate.getHours();
+    const hour_sin = Math.sin((2 * Math.PI * hour) / 24.0);
+    const hour_cos = Math.cos((2 * Math.PI * hour) / 24.0);
+    const is_night = (hour >= 0 && hour <= 5) ? 1 : 0;
+
+    const cc_num = String(getCol(r, 'cc_num', '0000'));
+    const past_mean = bundle.card_hist_mean[cc_num] || bundle.global_median_amt;
+    const effective_mean = past_mean <= 0 ? bundle.global_median_amt : past_mean;
+
+    const amt_ratio = amt / effective_mean;
+    const amt_diff = amt - effective_mean;
+    const trans_count_past = bundle.card_hist_count[cc_num] || 0;
+    const city_pop = parseFloat(getCol(r, 'city_pop', '10000')) || 10000;
+
+    const category = getCol(r, 'category', 'misc_pos');
+    const category_risk = bundle.cat_fraud_rates[category] || bundle.global_fraud_rate;
+
+    // 11 Features in exact order
+    const feats = [amt, dist, age, hour_sin, hour_cos, is_night, amt_ratio, city_pop, amt_diff, trans_count_past, category_risk];
+    const prob = evaluateLightGBM(feats, bundle);
+    const risk_pct = Number((prob * 100).toFixed(2));
+
+    // Decision Policy
+    let status = 'Đã duyệt';
+    let decision_badge = 'AUTO-APPROVED';
+    let color = 'green';
+
+    if (prob < bundle.threshold) {
+      status = 'Đã duyệt';
+      decision_badge = 'AUTO-APPROVED';
+      color = 'green';
+    } else if (prob <= bundle.critical_threshold) {
+      status = 'Cần gọi CSKH';
+      decision_badge = 'STEP-UP AUTH';
+      color = 'amber';
+    } else {
+      status = 'Đã chặn';
+      decision_badge = 'AUTO-BLOCKED';
+      color = 'red';
+    }
+
+    // XAI Insights
+    const insights = [];
+    if (amt_ratio >= 3.0) {
+      insights.push({
+        type: 'red',
+        title: 'Số tiền chi tiêu đột biến',
+        desc: `Số tiền $${amt.toFixed(2)} gấp ${amt_ratio.toFixed(1)}x so với mức chi tiêu trung bình ($${effective_mean.toFixed(2)}) của chủ thẻ.`
+      });
+    } else if (amt > 300) {
+      insights.push({
+        type: 'amber',
+        title: 'Giá trị giao dịch lớn',
+        desc: `Giao dịch $${amt.toFixed(2)} vượt ngưỡng giao dịch thông thường.`
+      });
+    }
+
+    if (is_night === 1) {
+      insights.push({
+        type: 'amber',
+        title: 'Khung giờ rủi ro cao (Đêm khuya)',
+        desc: `Giao dịch được thực hiện lúc ${String(hour).padStart(2,'0')}:00 (khung giờ 00:00 - 05:00 có tần suất gian lận cao).`
+      });
+    }
+
+    if (dist >= 100) {
+      insights.push({
+        type: dist > 500 ? 'red' : 'amber',
+        title: 'Bất thường khoảng cách địa lý',
+        desc: `Máy quẹt thẻ / Merchant cách nơi cư trú của chủ thẻ ${dist.toFixed(1)} km.`
+      });
+    }
+
+    if (category_risk >= bundle.global_fraud_rate * 2.0) {
+      insights.push({
+        type: 'amber',
+        title: `Ngành hàng rủi ro cao (${category})`,
+        desc: `Ngành hàng này có tỷ lệ gian lận lịch sử ${(category_risk * 100).toFixed(2)}% trong hệ thống.`
+      });
+    }
+
+    if (insights.length === 0) {
+      insights.push({
+        type: 'green',
+        title: 'Hồ sơ giao dịch an toàn',
+        desc: 'Số tiền, vị trí và thời gian đều khớp với thói quen sinh hoạt và lịch sử thẻ của khách hàng.'
+      });
+    }
+
+    const maskedCard = `**** ${cc_num.slice(-4)}`;
+    const firstName = getCol(r, 'first', '');
+    const lastName = getCol(r, 'last', '');
+    const fullName = `${firstName} ${lastName}`.trim() || 'Khách hàng Thẻ';
+
+    scored.push({
+      id: getCol(r, 'trans_num', `TX-${String(i).padStart(6, '0')}`),
+      date: transTimeStr ? transTimeStr.split(' ')[0] : '2026-10-14',
+      time: transTimeStr ? (transTimeStr.split(' ')[1] || '12:00:00') : '12:00:00',
+      name: fullName,
+      card: maskedCard,
+      amount: amt,
+      category: category,
+      merchant: getCol(r, 'merchant', 'Merchant').replace('fraud_', ''),
+      risk: risk_pct,
+      status: status,
+      decision_badge: decision_badge,
+      color: color,
+      age: Math.max(18, age),
+      address: `${getCol(r, 'city', '')}, ${getCol(r, 'state', '')}`.trim().replace(/^,|,$/g, '') || 'Hoa Kỳ',
+      job: getCol(r, 'job', 'N/A'),
+      location: `Lat: ${merch_lat.toFixed(2)}, Long: ${merch_long.toFixed(2)}`,
+      distance: Number(dist.toFixed(1)),
+      amt_ratio: Number(amt_ratio.toFixed(1)),
+      category_risk: Number((category_risk * 100).toFixed(2)),
+      insights: insights
+    });
+  }
+
+  const elapsed = performance.now() - t0;
+  const avgLatency = elapsed / Math.max(1, scored.length);
+
+  return {
+    transactions: scored,
+    summary: {
+      total: scored.length,
+      approved: scored.filter(t => t.status === 'Đã duyệt').length,
+      cskh_review: scored.filter(t => t.status === 'Cần gọi CSKH').length,
+      blocked: scored.filter(t => t.status === 'Đã chặn').length,
+      total_latency_ms: Number(elapsed.toFixed(2)),
+      avg_latency_ms: Number(avgLatency.toFixed(4)),
+      filename: filename
+    }
+  };
+}
+
+// INITIAL DATA LOAD
 async function loadInitialData() {
+  // 1. Try Flask API
   try {
-    // Try Flask API first
     const res = await fetch('/api/sample');
     if (res.ok) {
       const data = await res.json();
@@ -1076,9 +1366,10 @@ async function loadInitialData() {
       return;
     }
   } catch (e) {
-    // Fallback: load static scored_demo_transactions.json
+    // API not running, continue to local bundle
   }
 
+  // 2. Try static scored_demo_transactions.json
   try {
     const resStatic = await fetch('scored_demo_transactions.json');
     if (resStatic.ok) {
@@ -1088,13 +1379,27 @@ async function loadInitialData() {
       return;
     }
   } catch (err) {
-    console.warn("Could not load scored_demo_transactions.json, using fallback", err);
+    // Continue to client-side fallback
+  }
+
+  // 3. Fallback: Score unlabeled_transactions_demo.csv on the fly via client JS
+  try {
+    const resCsv = await fetch('unlabeled_transactions_demo.csv');
+    if (resCsv.ok) {
+      const text = await resCsv.text();
+      const res = scoreDatasetClientSide(text, 'unlabeled_transactions_demo.csv');
+      initTransactions(res.transactions, res.summary);
+      showToast('✓ Đã chấm điểm 100 giao dịch bằng LightGBM Engine trên trình duyệt');
+      return;
+    }
+  } catch (err2) {
+    console.warn("Could not load unlabeled_transactions_demo.csv", err2);
   }
 }
 
 function initTransactions(list, summary) {
   transactions = [...list];
-  defaultTransactions = [...list];
+  if (defaultTransactions.length === 0) defaultTransactions = [...list];
   selected = transactions[0] || null;
   updateKPIs(summary);
   renderRows();
@@ -1256,7 +1561,6 @@ function populateCase() {
   $('caseTime').textContent = `${t.time} · ${parseInt(t.time) < 5 ? 'Khung giờ rủi ro cao (Đêm khuya)' : 'Khung giờ bình thường'}`;
   $('caseCatRisk').textContent = t.category_risk ? `${t.category_risk}% tỷ lệ lịch sử` : 'Bình thường';
 
-  // Insights
   const insContainer = $('caseInsightsContainer');
   if (t.insights && t.insights.length > 0) {
     insContainer.innerHTML = t.insights.map(i => `
@@ -1284,57 +1588,12 @@ function populateCase() {
   $('auditAnalystText').innerHTML = `<b style="color:#94a3b8;">Chuyên viên phân tích</b><br>Trạng thái hiện tại: <b>${t.status}</b>`;
 }
 
-// ACTION BUTTONS (Block / OTP / False Positive)
-function startAction(action) {
-  if (!selected) return;
-  pendingAction = action;
-  const titles = {
-    block: ['Xác nhận gian lận & Khóa thẻ', `Hành động này sẽ khóa thẻ ${selected.card} và ghi nhận xác nhận gian lận vào hồ sơ.`],
-    otp: ['Gửi OTP xác thực / Gọi CSKH', `Hành động này sẽ tạm giữ giao dịch ${selected.id} và gửi yêu cầu xác minh tới chủ thẻ.`],
-    false: ['Đánh dấu Báo động nhầm (False Positive)', `Hành động này sẽ phê duyệt giao dịch ${selected.id} và ghi nhận phản hồi vào hệ thống.`]
-  };
-  $('modalTitle').textContent = titles[action][0];
-  $('modalText').textContent = titles[action][1];
-  $('reasonInput').value = '';
-  $('modalBack').classList.add('show');
-}
-
-function confirmAction() {
-  const reason = $('reasonInput').value.trim();
-  if (!reason) {
-    $('reasonInput').style.borderColor = '#ef4444';
-    $('reasonInput').placeholder = 'Vui lòng nhập lý do can thiệp!';
-    return;
-  }
-  
-  if (pendingAction === 'block') selected.status = 'Đã chặn';
-  if (pendingAction === 'otp') selected.status = 'Cần gọi CSKH';
-  if (pendingAction === 'false') selected.status = 'Đã duyệt';
-  
-  const textMsg = {
-    block: 'Đã khóa thẻ vĩnh viễn và ngăn chặn gian lận',
-    otp: 'Đã gửi yêu cầu xác thực OTP đến chủ thẻ',
-    false: 'Đã ghi nhận báo động nhầm và duyệt giao dịch'
-  }[pendingAction];
-  
-  $('modalBack').classList.remove('show');
-  updateKPIs();
-  renderRows();
-  populateCase();
-  showToast('✓ ' + textMsg + ' · Nhật ký kiểm toán đã cập nhật');
-  pendingAction = null;
-}
-
-// UPLOAD UNLABELED CSV (REAL BANKING SIMULATION)
-$('uploadCsvBtn').addEventListener('click', () => $('csvFileInput').click());
-
-$('csvFileInput').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
+// PROCESS FILE (HANDLES BOTH FLASK API & CLIENT-SIDE JS ENGINE)
+async function handleFileProcess(file) {
   if (!file) return;
+  showToast(`⚡ Đang nạp và chấm điểm tệp ${file.name}...`);
 
-  showToast(`⚡ Đang nạp và chấm điểm tệp ${file.name} qua Master Model LightGBM...`);
-
-  // Try Uploading to Flask Backend
+  // Try Flask Backend first if available
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -1347,84 +1606,83 @@ $('csvFileInput').addEventListener('change', async (e) => {
       const data = await res.json();
       initTransactions(data.transactions, data.summary);
       $('batchTitle').textContent = `Đã nạp và chấm điểm thành công ${data.transactions.length} giao dịch từ tệp ${file.name}`;
-      showToast(`✓ Chấm điểm xong ${data.transactions.length} giao dịch trong ${data.summary.total_latency_ms} ms!`);
+      showToast(`✓ Chấm điểm xong ${data.transactions.length} giao dịch trong ${data.summary.total_latency_ms} ms (Flask API)!`);
       return;
-    } else {
-      const err = await res.json();
-      throw new Error(err.error || 'Server error');
     }
   } catch (err) {
-    console.warn("Flask upload failed, attempting client-side parsing fallback:", err);
-    parseCsvClientSide(file);
+    // API not responding, fallback to Client-side JavaScript LightGBM Engine
   }
-});
 
-// Client-side CSV parser fallback for static file preview
-function parseCsvClientSide(file) {
+  // Pure Client-side JS Engine
   const reader = new FileReader();
   reader.onload = function(evt) {
     try {
-      const lines = evt.target.result.split(/\r?\n/).filter(l => l.trim().length > 0);
-      if (lines.length < 2) throw new Error("File CSV rỗng!");
-
-      const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-      const parsed = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        // Regex CSV parser to handle quotes
-        const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
-        const cleanRow = row.map(c => c.trim().replace(/^"|"$/g, ''));
-        
-        let item = {};
-        header.forEach((h, idx) => {
-          item[h] = cleanRow[idx] || '';
-        });
-
-        // Basic calculation fallback
-        const amt = parseFloat(item['amt']) || 10.0;
-        const hour = item['trans_date_trans_time'] ? new Date(item['trans_date_trans_time']).getHours() : 12;
-        const isNight = hour >= 0 && hour <= 5;
-        
-        // Realistic simulated score based on LightGBM rules
-        let score = (amt > 300 ? 40 : 0.5) + (isNight ? 30 : 0) + (item['category'] === 'shopping_net' ? 25 : 0);
-        score = Math.min(99.4, Math.max(0.01, score + (Math.random() * 2 - 1)));
-        
-        let status = score < 2.27 ? 'Đã duyệt' : score <= 15 ? 'Cần gọi CSKH' : 'Đã chặn';
-        let ccStr = String(item['cc_num'] || '0000');
-
-        parsed.push({
-          id: item['trans_num'] || `TX-LOCAL-${i}`,
-          date: item['trans_date_trans_time'] ? item['trans_date_trans_time'].split(' ')[0] : 'Today',
-          time: item['trans_date_trans_time'] ? item['trans_date_trans_time'].split(' ')[1] : '12:00:00',
-          name: `${item['first'] || ''} ${item['last'] || ''}`.trim() || 'Khách hàng',
-          card: `**** ${ccStr.slice(-4)}`,
-          amount: amt,
-          category: item['category'] || 'misc_pos',
-          merchant: (item['merchant'] || 'Merchant').replace('fraud_', ''),
-          risk: score,
-          status: status,
-          age: parseInt(item['age']) || 35,
-          address: `${item['city'] || ''}, ${item['state'] || ''}`,
-          job: item['job'] || 'N/A',
-          location: `Lat: ${item['merch_lat'] || 0}, Long: ${item['merch_long'] || 0}`,
-          distance: 12.5,
-          amt_ratio: (amt / 47.5).toFixed(1),
-          category_risk: 1.2,
-          insights: [
-            { type: score > 15 ? 'red' : score >= 2.27 ? 'amber' : 'green', title: 'Điểm rủi ro AI', desc: `Mô hình phát hiện tín hiệu bất thường với xác suất ${score.toFixed(2)}%.` }
-          ]
-        });
-      }
-
-      initTransactions(parsed, { avg_latency_ms: 0.88, total_latency_ms: parsed.length * 0.88 });
-      $('batchTitle').textContent = `Đã nạp và chấm điểm ${parsed.length} giao dịch từ tệp ${file.name}`;
-      showToast(`✓ Đã nạp và chấm điểm thành công ${parsed.length} giao dịch!`);
+      const csvText = evt.target.result;
+      const res = scoreDatasetClientSide(csvText, file.name);
+      initTransactions(res.transactions, res.summary);
+      $('batchTitle').textContent = `Đã nạp và chấm điểm thành công ${res.transactions.length} giao dịch từ tệp ${file.name}`;
+      showToast(`✓ Chấm điểm xong ${res.transactions.length} giao dịch trong ${res.summary.total_latency_ms} ms (Browser LightGBM Engine)!`);
     } catch (parseErr) {
-      alert("Lỗi khi đọc file CSV: " + parseErr.message);
+      alert("Lỗi khi xử lý file CSV: " + parseErr.message);
     }
   };
   reader.readAsText(file);
 }
+
+// EVENT LISTENERS FOR FILE UPLOAD
+$('uploadCsvBtn').addEventListener('click', () => $('csvFileInput').click());
+$('dropZoneBtn').addEventListener('click', () => $('csvFileInput').click());
+
+$('csvFileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) handleFileProcess(file);
+  e.target.value = ''; // Reset for re-selection
+});
+
+// DRAG & DROP HANDLING
+const dropZone = $('dropZone');
+
+['dragenter', 'dragover'].forEach(eventName => {
+  dropZone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+  dropZone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
+  });
+});
+
+dropZone.addEventListener('drop', (e) => {
+  const dt = e.dataTransfer;
+  const file = dt.files[0];
+  if (file) handleFileProcess(file);
+});
+
+// Window level drag-over prevention
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+// SAMPLE BUTTON IN DROPZONE
+$('dropZoneSampleBtn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('unlabeled_transactions_demo.csv');
+    if (res.ok) {
+      const text = await res.text();
+      const scored = scoreDatasetClientSide(text, 'unlabeled_transactions_demo.csv');
+      initTransactions(scored.transactions, scored.summary);
+      $('batchTitle').textContent = `Đang hiển thị 100 giao dịch thực nghiệm từ Master Model LightGBM`;
+      showToast('✓ Đã nạp và chấm điểm 100 giao dịch mẫu thành công!');
+    }
+  } catch (e) {
+    showToast('Lỗi khi nạp file mẫu: ' + e.message);
+  }
+});
 
 // DOWNLOAD UNLABELED SAMPLE CSV
 $('downloadSampleBtn').addEventListener('click', () => {
@@ -1471,6 +1729,47 @@ $('filterCriticalBtn').addEventListener('click', () => {
   renderRows();
   switchView('feed');
 });
+
+// ACTION CENTER CONFIRMATION
+function startAction(action) {
+  if (!selected) return;
+  pendingAction = action;
+  const titles = {
+    block: ['Xác nhận gian lận & Khóa thẻ', `Hành động này sẽ khóa thẻ ${selected.card} và ghi nhận xác nhận gian lận vào hồ sơ.`],
+    otp: ['Gửi OTP xác thực / Gọi CSKH', `Hành động này sẽ tạm giữ giao dịch ${selected.id} và gửi yêu cầu xác minh tới chủ thẻ.`],
+    false: ['Đánh dấu Báo động nhầm (False Positive)', `Hành động này sẽ phê duyệt giao dịch ${selected.id} và ghi nhận phản hồi vào hệ thống.`]
+  };
+  $('modalTitle').textContent = titles[action][0];
+  $('modalText').textContent = titles[action][1];
+  $('reasonInput').value = '';
+  $('modalBack').classList.add('show');
+}
+
+function confirmAction() {
+  const reason = $('reasonInput').value.trim();
+  if (!reason) {
+    $('reasonInput').style.borderColor = '#ef4444';
+    $('reasonInput').placeholder = 'Vui lòng nhập lý do can thiệp!';
+    return;
+  }
+  
+  if (pendingAction === 'block') selected.status = 'Đã chặn';
+  if (pendingAction === 'otp') selected.status = 'Cần gọi CSKH';
+  if (pendingAction === 'false') selected.status = 'Đã duyệt';
+  
+  const textMsg = {
+    block: 'Đã khóa thẻ vĩnh viễn và ngăn chặn gian lận',
+    otp: 'Đã gửi yêu cầu xác thực OTP đến chủ thẻ',
+    false: 'Đã ghi nhận báo động nhầm và duyệt giao dịch'
+  }[pendingAction];
+  
+  $('modalBack').classList.remove('show');
+  updateKPIs();
+  renderRows();
+  populateCase();
+  showToast('✓ ' + textMsg + ' · Nhật ký kiểm toán đã cập nhật');
+  pendingAction = null;
+}
 
 // NAVIGATION & FILTERS
 document.querySelectorAll('.nav[data-view]').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));

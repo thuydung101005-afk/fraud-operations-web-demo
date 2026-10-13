@@ -1,0 +1,9 @@
+TxID,Date,Time,Cardholder,MaskedCard,AmountUSD,MerchantCategory,RiskScorePct,Status
+TX-2026-009184,14 Oct 2026,02:45:18,Sophia Martinez,**** 4812,850,shopping_net,98.7,Chờ xử lý
+TX-2026-009183,14 Oct 2026,02:41:03,James Wilson,**** 1209,1240,jewelry,87.2,Đã chặn
+TX-2026-009182,14 Oct 2026,02:38:44,Olivia Chen,**** 7721,328,shopping_net,12.4,Cần gọi CSKH
+TX-2026-009181,14 Oct 2026,02:35:12,Noah Johnson,**** 6504,46.8,grocery_pos,0.8,Đã duyệt
+TX-2026-009180,14 Oct 2026,02:31:59,Ava Thompson,**** 0338,189,food_dining,3.6,Chờ xử lý
+TX-2026-009179,14 Oct 2026,02:28:07,Liam Brown,**** 9140,2200,cash_advance,99.1,Đã chặn
+TX-2026-009178,14 Oct 2026,02:22:35,Isabella Davis,**** 2876,72.5,gas_transport,1.2,Đã duyệt
+TX-2026-009177,14 Oct 2026,02:18:52,Ethan Garcia,**** 5923,610,shopping_net,21.6,Chờ xử lý
